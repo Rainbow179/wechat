@@ -1,6 +1,7 @@
 const express = require('express');
 const sha1 = require('sha1');
 const {getUserDataAsync, parseXMLDataAsync,formatMessage} = require('./utils/tool');
+const template =require('./reply/template');
 const app = express();
 
 //定义了config 来保存微信里的东西
@@ -59,6 +60,16 @@ app.use(async (req, res, next) => {
      Content: '333',
      MsgId: '6624370391693488478' }
      */
+    
+    //初始化消息配置对象
+    let options = {
+      toUserName:message.FromUserName,
+      formUserName:message.ToUserName,
+      createTime:Date.now(),
+      msgType:'text'
+    }
+    
+    
     //初始化一个消息文本
     let content = '你在说什么，我听不懂~';
   
@@ -67,23 +78,34 @@ app.use(async (req, res, next) => {
       content = '大吉大利，今晚吃鸡';
     } else if (message.Content === '2') {
       content = '落地成盒';
-    } else if (message.Content.includes('爱')) {  //半匹配
-      content = '我爱你~';
+    } else if (message.Content.includes('豆包')) {  //半匹配
+      content = '豆包是个傻子呀~';
+    }else if (message.Content ==='3'){
+      //回复图片消息
+      options.msgType = 'news';
+      options.title = '微信公众号开发~';
+      options.description = 'class0810~';
+      options.picUrl = 'https://ss1.baidu.com/6ONXsjip0QIZ8tyhnq/it/u=199783060,2774173244&fm=58&s=188FA15AB1206D1108400056000040F6&bpow=121&bpoh=75';
+      options.url = 'http://www.atguigu.com';
     }
-  
-    //返回xml消息给微信服务器
-    //微信官网提供的xml数据有问题，有多余的空格，要手动去除，不去除会报错
-    let replyMessage = `<xml>
-      <ToUserName><![CDATA[${message.FromUserName}]]></ToUserName>
-      <FromUserName><![CDATA[${message.ToUserName}]]></FromUserName>
-      <CreateTime>${Date.now()}</CreateTime>
-      <MsgType><![CDATA[text]]></MsgType>
-      <Content><![CDATA[${content}]]></Content>
-      </xml>`;
+    options.content = content;
+    const replyMessage =template(options);
+    console.log(replyMessage);
+    
     res.send(replyMessage);
   }else {
     res.end('error');
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 })
 
