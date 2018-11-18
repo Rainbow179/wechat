@@ -7,7 +7,7 @@ module.exports = options => {
      <MsgType><![CDATA[${options.msgType}]]></MsgType>`;
      <!--conten部分需要判断-->
   if (options.msgType==='text'){
-       replyMessage += `<Content><![CDATA[${options.content}]]></Content>`;
+    replyMessage += `<Content><![CDATA[${options.content}]]></Content>`;
   }else if (options.msgType==='image'){
     replyMessage += `<Image><MediaId><![CDATA[${options.mediaId}]]></MediaId></Image>`;
   } else if (options.msgType === 'voice') {
