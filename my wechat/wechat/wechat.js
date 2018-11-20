@@ -1,6 +1,7 @@
 const rp =require ('request-promise-native');
 const {writeFile, readFile} = require('fs');
 const {appID,appsecret} = require('../reply/config');
+const api =require('../api/index');
 
 class Wechat {
   /**
@@ -10,7 +11,7 @@ class Wechat {
   
   async getAccessToken(){
     //定义请求地址
-    const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appID}&secret=${appsecret}`;
+    const url = `${api.accessToken}$appid=${appID}&secret=${appsecret}`;
     //发送请求
     const result = await rp({method:'GET',url,json: true});
     //设置access_token的过期时间,提前五分钟刷新
@@ -130,7 +131,7 @@ class Wechat {
       const {access_token} = await this.fetchAccessToken();
       //定义请求地址
       
-      const url = `https://api.weixin.qq.com/cgi-bin/menu/create?access_token=${access_token}`;
+      const url = `${api.menu.create}access_token=${access_token}`;
       
       //发送请求
       
@@ -151,7 +152,7 @@ class Wechat {
       const {access_token} =await this.fetchAccessToken();
       //定义请求地址
   
-      const url = `https://api.weixin.qq.com/cgi-bin/menu/delete?access_token=${access_token}`;
+      const url = `${api.menu.delete}access_token=${access_token}`;
       //发送请求
       const result = await rp({method:'GET',url,json:true});
       
@@ -161,19 +162,65 @@ class Wechat {
     }
   }
   
+  /**
+   * 创建标签
+   * @param name 标签名
+   * @return {Promise<*>}
+   */
+  async createTag (name) {
+    try {
+      const {access_token} = await this.fetchAccessToken();
+      
+      const url = `${api.tag.create}access_token=${access_token}`;
+      const result =await rp({method:'POST',url,json:true,body:{tag:{name}}});
+      return result;
+    } catch (e) {
+      return 'createTag方法出了问题:' + e;
+    }
+  }
+  //得到用户信息
+  async getTagUser (tagid,next_openid='') {
+    try {
+      const {access_token} = await  this.fetchAccessToken();
+      const url = `${api.tag.getUsers}access_token=${access_token}`;
+      return await rp ({method:'POST',url,json:true,body:{tagid,next_openid}});
+    } catch (e) {
+      return 'getTagUsers方法出了问题:' + e ;
+    }
+  }
+  //获取用户列表
   
+  async batchUsersTag (openid_list,tagid) {
+    try{
+      const {access_token} = await this.fetchAccessToken();
+      const url = `${api.tag.batch}access_token=${access_token}`;
+      return await rp ({method:'POST',url,json:true,body:{tagid,openid_list}});
+    } catch (e) {
+      return 'batchUsersTag方法除了问题' + e;
+    }
+  }
   
-  
-
 }
+
+
+
 (async() => {
   //读取本地保存的access_token
   
   const w = new Wechat();
-  let result = await w.fetchAccessToken();
-  console.log(result);
-  result = await w.createMenu(require('./menu'));
-  console.log(result);
+  let result1 = await w.createMenu(require('./menu'));
+  console.log(result1);
+  //粉丝列表的设置
+  let result2 = await w.batchUsersTag([
+    'oAsoR1rnW1QrtFPSqsClTTl2stE0',
+    'oAsoR1ktRa8MGiuxEC5RphecPXKs',
+    'oAsoR1sBFZ1uvG4Qt64IbhDZLZFU',
+    'oAsoR1kvRB5hCjHOKCsNpb78aeyE',
+    'oAsoR1iP-_D3LZIwNCnK8BFotmJc'
+  ], result1.tag.id);
+  console.log(result2);
+  let result3 = await  w.getTagUsers(result1.tag.id);
+  console.log(result3);
 })()
 
 
