@@ -29,3 +29,85 @@
     * git clone xxx
   * 问题：只有一个分支。想要其它分支的内容
     * git fetch origin dev:dev
+
+## 验证服务器有效性
+* 目的：验证消息是否来自于微信服务器（通常做1次）
+* 流程：
+  * 搭建服务器
+  * 通过ngrok内网穿透，就能得到互联网能访问的网址（每次启动网址不一样）
+  * 测试号管理页面填写服务器配置
+  * 微信签名加密算法：
+    * 将参与微信签名加密的三个参数（timestamp、nonce、token）组合在一起，安装字典序排序
+    * 将排序后的数组里面的元素拼接在一起，进行sha1加密
+    * 加密后得到就是微信签名，与发过来的签名进行对比，如果是，说明消息来自于微信服务器
+
+## 接受用户发送的消息，做了简单的回复
+* 流程
+  * 接受用户发送的消息
+    * 判断请求方式，get请求是验证服务器有效性，而post请求才是微信服务器转发用户的消息
+    * 判断消息是否来自于微信服务器
+    * 用户消息分为两种：
+      * 查询字符串：判断消息是否来自于微信服务器
+      * 请求体：req.on绑定事件方式获取数据
+  * 将消息格式化
+    * 得到用户消息是xml数据，需要转化js对象
+    * 去npm仓库搜xml库，通过xml2js转化xml数据
+    * 格式化数据，得到js对象
+  * 根据消息的内容，做简单的回复
+    * 判断message.Content的内容，做出相应的回应
+    * 微信要求回复消息内容也必须是xml数据格式
+    
+## 完成了完整回复
+* 对用户发送的消息进行类型判断
+  * reply
+  * 决定最终回复消息的内容 options
+* 回复用户6种消息模板
+    
+## 获取access_token
+* 全局接口的唯一调用凭据
+* 实现思路
+  读取本地保存access_token（readAccessToken）
+    - 有
+      - 判断是否过期（isValidAccessToken）
+        - 过期了, 重新发送请求，获取access_token（getAccessToken），保存下来（覆盖之前的）(saveAccessToken)
+        - 没有过期, 直接使用
+    - 没有
+      - 发送请求，获取access_token，保存下来
+   ---------------------------------------------------------------
+      /*
+        获取access_token。
+        1. 是什么？
+          微信公众号的全局唯一接口调用凭据
+
+          接口/api  application interface:
+            1. url地址： 全称包含：请求方式、请求地址、请求参数、响应内容等
+            2. 公共函数/方法
+        2. 作用：
+          使用access_token才能成功调用微信的各个接口
+        3. 特点：
+          1. access_token的存储至少要保留512个字符空间
+          2. 有效期目前为2个小时，提前5分钟刷新
+          3. 重复获取将导致上次获取的access_token失效，注意不要用别人的appid appsecret
+          4. access_token接口调用是有限的，大概为2000次
+        4. 请求地址
+          https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET
+        5. 请求方式：
+          GET
+        6. 请求成功的响应结果：
+          JSON： {"access_token":"ACCESS_TOKEN","expires_in":7200}
+        7. 发送请求：
+          npm install --save request request-promise-native
+        8. 设计：
+          - 第一次发送请求，获取access_token，保存下来
+          - 第二次读取之前保存的access_token，判断是否过期
+            - 过期了, 重新发送请求，获取access_token，保存下来（覆盖之前的）
+            - 没有过期, 直接使用
+         整理：
+           读取本地保存access_token（readAccessToken）
+            - 有
+              - 判断是否过期（isValidAccessToken）
+                - 过期了, 重新发送请求，获取access_token（getAccessToken），保存下来（覆盖之前的）(saveAccessToken)
+                - 没有过期, 直接使用
+            - 没有
+              - 发送请求，获取access_token，保存下来
+       */
